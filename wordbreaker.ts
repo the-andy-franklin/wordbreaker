@@ -1,5 +1,6 @@
 const fs = require('fs')
-const args = process.argv.slice(2)
+const yargs = require('yargs')
+const { args } = yargs(process.argv.slice(2))
 
 const wordCost: { [key: string]: number } = {}
 let maxWordLen = 0
