@@ -1,6 +1,5 @@
 const fs = require('fs')
-const yargs = require('yargs')
-const { args } = yargs(process.argv.slice(2))
+const { argv } = require('yargs')
 
 const wordCost: { [key: string]: number } = {}
 let maxWordLen = 0
@@ -15,7 +14,7 @@ words.forEach((word, index) => {
   }
 })
 
-args.forEach((arg) => {
+argv?._.forEach((arg: string) => {
   console.log(breakwords(arg).join(' '))
 })
 
@@ -40,7 +39,7 @@ function _split(s: string): string[] {
     const candidates = cost.slice(Math.max(0, i - maxWordLen), i).reverse();
     let minPair = [Number.MAX_SAFE_INTEGER, 0];
     candidates.forEach((c: number, k: number) => {
-      if (wordCost[s.substring(i - k - 1, i)]) {
+      if (wordCost[s.substring(i - k - 1, i).toLowerCase()]) {
         const ccost = c + wordCost[s.substring(i - k - 1, i).toLowerCase()]
         if (ccost < minPair[0]) {
           minPair = [ccost, k + 1]
