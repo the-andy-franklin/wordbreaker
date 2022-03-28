@@ -4,7 +4,7 @@ if (!argv._.length) process.exit(1);
 
 const fs = require('fs');
 const data = fs.readFileSync('./wordlist.txt', { encoding: 'utf-8' });
-const wordlist = data.split('\n');
+const wordlist: string[] = data.split('\n');
 
 let maxWordLen = 0;
 const wordCostLibrary: { [key: string]: number } = {};
@@ -41,19 +41,20 @@ function breakwords(str: string): string[] {
 function split(str: string): string[] {
 	const cost = [0];
 
-	function best_match(num: number): number[] {
-		const candidates = cost.slice(Math.max(0, num - maxWordLen), num).reverse();
+	function best_match(i: number): number[] {
+		const candidates = cost.slice(Math.max(0, i - maxWordLen), i).reverse();
 		let minPair = [Number.MAX_SAFE_INTEGER, 0];
-		candidates.forEach((candidate: number, i: number) => {
-			const wordCost =
-				wordCostLibrary[str.substring(num - i - 1, num).toLowerCase()];
+
+		candidates.forEach((candidate: number, j: number) => {
+			const wordCost = wordCostLibrary[str.substring(i - j - 1, i).toLowerCase()];
 			if (wordCost) {
 				const candidateCost = candidate + wordCost;
 				if (candidateCost < minPair[0]) {
-					minPair = [candidateCost, i + 1];
+					minPair = [candidateCost, j + 1];
 				}
 			}
 		});
+
 		return minPair;
 	}
 
@@ -62,14 +63,17 @@ function split(str: string): string[] {
 	}
 
 	const out: string[] = [];
-	for (let i = str.length; i > 0; i -= best_match(i)[1]) {
-		const [, j] = best_match(i);
-
+	// eslint-disable-next-line prettier/prettier
+	for (
+		let j: number, i: number = str.length;
+		(j = best_match(i)[1]),
+		i > 0; i -= j
+	) {
 		let newToken = true;
 		if (out.length > 0) {
 			const outTail = out.slice(-1)[0];
 			if (
-				outTail.match(/^'\w+$/) ||
+				outTail.match(/^('s|'d|'ve|'ll|n't)+$/) ||
 				(outTail.match(/^\d+$/) && str[i - 1].match(/^\d$/))
 			) {
 				out.pop();
