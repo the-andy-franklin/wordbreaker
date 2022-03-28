@@ -41,7 +41,7 @@ function breakwords(str: string): string[] {
 function split(str: string): string[] {
 	const cost = [0];
 
-	function best_match(i: number): number[] {
+	function getBestMatch(i: number): number[] {
 		const candidates = cost.slice(Math.max(0, i - maxWordLen), i).reverse();
 		let minPair = [Number.MAX_SAFE_INTEGER, 0];
 
@@ -59,21 +59,22 @@ function split(str: string): string[] {
 	}
 
 	for (let i = 1; i <= str.length; i++) {
-		cost.push(best_match(i)[0]);
+		cost.push(getBestMatch(i)[0]);
 	}
 
 	const out: string[] = [];
 	// eslint-disable-next-line prettier/prettier
 	for (
 		let j: number, i: number = str.length;
-		(j = best_match(i)[1]),
+		(j = getBestMatch(i)[1]),
 		i > 0; i -= j
 	) {
 		let newToken = true;
+
 		if (out.length > 0) {
 			const outTail = out.slice(-1)[0];
 			if (
-				outTail.match(/^('s|'d|'ve|'ll|n't)+$/) ||
+				outTail.match(/^('s|'d|'ll|'ve|n't)+$/) ||
 				(outTail.match(/^\d+$/) && str[i - 1].match(/^\d$/))
 			) {
 				out.pop();
