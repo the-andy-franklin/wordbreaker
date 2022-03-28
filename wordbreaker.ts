@@ -1,76 +1,85 @@
 require('./logger');
-const fs = require('fs');
 const argv = require('yargs')(process.argv.slice(2)).argv;
+if (!argv._.length) process.exit(1);
 
-const wordCost: { [key: string]: number } = {};
-let maxWordLen = 0;
-
+const fs = require('fs');
 const data = fs.readFileSync('./wordlist.txt', { encoding: 'utf-8' });
+const wordlist = data.split('\n');
 
-const words: string[] = data.split('\n');
-words.forEach((word, index) => {
-	wordCost[word] = Math.log((index + 1) * Math.log(words.length));
+let maxWordLen = 0;
+const wordCostLibrary: { [key: string]: number } = {};
+
+wordlist.forEach((word, index) => {
+	wordCostLibrary[word] = Math.log((index + 1) * Math.log(wordlist.length));
 	if (word.length > maxWordLen) {
 		maxWordLen = word.length;
 	}
 });
 
 argv._.forEach((arg: string) => {
-	console.log(breakwords(arg).join(' '));
+	console.log(
+		breakwords(arg)
+			.join(' ')
+			.replace(/\s([,.!?])/g, '$1'),
+	);
 });
 
 function breakwords(str: string): string[] {
-	const list: string[] = [];
+	const finalWordList: string[] = [];
 	str.split(/\b(?=[^\w'])|(?<=[^\w'])\b/g).forEach((substring: string) => {
 		if (substring.match(/[^\w']/)) {
-			list.push(substring);
+			finalWordList.push(substring);
 		} else {
-			_split(substring).forEach((word: string) => {
-				list.push(word);
+			split(substring).forEach((word: string) => {
+				finalWordList.push(word);
 			});
 		}
 	});
-	return list;
+	return finalWordList;
 }
 
-function _split(s: string): string[] {
+function split(str: string): string[] {
 	const cost = [0];
 
-	function best_match(i: number): number[] {
-		const candidates = cost.slice(Math.max(0, i - maxWordLen), i).reverse();
+	function best_match(num: number): number[] {
+		const candidates = cost.slice(Math.max(0, num - maxWordLen), num).reverse();
 		let minPair = [Number.MAX_SAFE_INTEGER, 0];
-		candidates.forEach((c: number, k: number) => {
-			if (wordCost[s.substring(i - k - 1, i).toLowerCase()]) {
-				const ccost = c + wordCost[s.substring(i - k - 1, i).toLowerCase()];
-				if (ccost < minPair[0]) {
-					minPair = [ccost, k + 1];
+		candidates.forEach((candidate: number, i: number) => {
+			const wordCost =
+				wordCostLibrary[str.substring(num - i - 1, num).toLowerCase()];
+			if (wordCost) {
+				const candidateCost = candidate + wordCost;
+				if (candidateCost < minPair[0]) {
+					minPair = [candidateCost, i + 1];
 				}
 			}
 		});
 		return minPair;
 	}
 
-	for (let i = 1; i < s.length + 1; i++) {
+	for (let i = 1; i <= str.length; i++) {
 		cost.push(best_match(i)[0]);
 	}
 
 	const out: string[] = [];
-	for (let i = s.length; i > 0; i -= best_match(i)[1]) {
-		const [c, k] = best_match(i);
+	for (let i = str.length; i > 0; i -= best_match(i)[1]) {
+		const [, j] = best_match(i);
 
+		let newToken = true;
 		if (out.length > 0) {
 			const outTail = out.slice(-1)[0];
 			if (
-				outTail.match(/^'s$/) ||
-				(outTail.match(/^\d+('s)?$/) && s[i - 1].match(/^\d$/))
+				outTail.match(/^'\w+$/) ||
+				(outTail.match(/^\d+$/) && str[i - 1].match(/^\d$/))
 			) {
 				out.pop();
-				out.push(s.slice(i - k, i) + outTail);
-			} else {
-				out.push(s.slice(i - k, i));
+				out.push(str.slice(i - j, i) + outTail);
+				newToken = false;
 			}
-		} else {
-			out.push(s.slice(i - k, i));
+		}
+
+		if (newToken) {
+			out.push(str.slice(i - j, i));
 		}
 	}
 
