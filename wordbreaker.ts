@@ -66,8 +66,8 @@ function split(str: string): string[] {
 	// eslint-disable-next-line prettier/prettier
 	for (
 		let j: number, i: number = str.length;
-		(j = getBestMatch(i)[1]),
-		i > 0; i -= j
+		(j = getBestMatch(i)[1]), i > 0;
+		i -= j
 	) {
 		let newToken = true;
 
